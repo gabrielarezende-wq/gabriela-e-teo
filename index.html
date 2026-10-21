@@ -243,6 +243,7 @@ footer small{display:block;margin-top:10px;opacity:.75}
         <label for="tel">Telefone<input id="tel" type="tel" autocomplete="tel" inputmode="tel" placeholder="(79) 90000-0000"></label>
         <label for="acomp">Acompanhantes<select id="acomp"><option value="0">Irei sozinho(a)</option><option value="1">1 acompanhante</option><option value="2">2 acompanhantes</option><option value="3">3 acompanhantes</option><option value="4">4 acompanhantes</option><option value="5">5 acompanhantes</option></select></label>
       </div>
+      <div id="acompNomes" style="display:flex;flex-direction:column;gap:14px" hidden></div>
       <label for="recado">Mensagem para os noivos (opcional)<textarea id="recado" rows="3" placeholder="Escreva um recado carinhoso"></textarea></label>
       <p class="err" id="err" role="alert" hidden></p>
       <button class="btn" type="submit" style="align-self:flex-start">Confirmar presença</button>
@@ -430,15 +431,27 @@ var CONFIG = {
   document.addEventListener("keydown",function(e){if(lb.hidden)return;if(e.key==="Escape")close();if(e.key==="ArrowLeft")show(cur-1);if(e.key==="ArrowRight")show(cur+1)});
 
   var err=$("#err"),done=$("#done"),last="";
+  $("#acomp").addEventListener("change",function(){
+    var n=+this.value, box=$("#acompNomes"), antigos=[].map.call(box.querySelectorAll("input"),function(i){return i.value});
+    box.innerHTML="";
+    for(var i=0;i<n;i++){
+      var l=document.createElement("label"); l.htmlFor="acompNome"+i; l.textContent="Nome do acompanhante "+(i+1);
+      var inp=document.createElement("input"); inp.id="acompNome"+i; inp.type="text"; inp.autocomplete="off"; inp.placeholder="Nome completo"; inp.value=antigos[i]||"";
+      l.appendChild(inp); box.appendChild(l);
+    }
+    box.hidden=n===0;
+  });
   $("#rsvp").addEventListener("submit",function(ev){
     ev.preventDefault();
     var nome=$("#nome").value.trim(),tel=$("#tel").value.trim(),ac=+$("#acomp").value,rec=$("#recado").value.trim();
     if(nome.length<3){err.textContent="Informe seu nome completo.";err.hidden=false;return}
     if(tel.replace(/\D/g,"").length<10){err.textContent="Informe um telefone com DDD.";err.hidden=false;return}
+    var nomes=[].map.call(document.querySelectorAll("#acompNomes input"),function(i){return i.value.trim()});
+    for(var k=0;k<nomes.length;k++){ if(nomes[k].length<3){err.textContent="Informe o nome do acompanhante "+(k+1)+".";err.hidden=false;document.getElementById("acompNome"+k).focus();return} }
     err.hidden=true;
-    last="Olá! Quero confirmar presença em seu casamento (Gabriela e Téo), em "+c.data+", às 10h, na Capela Nossa Senhora Desatadora dos Nós.\n\nNome: "+nome+"\nTelefone: "+tel+"\nAcompanhantes: "+(ac===0?"nenhum":ac)+(rec?"\nMensagem: "+rec:"");
+    last="Olá! Quero confirmar presença em seu casamento (Gabriela e Téo), em "+c.data+", às 10h, na Capela Nossa Senhora Desatadora dos Nós.\n\nNome: "+nome+"\nTelefone: "+tel+"\nAcompanhantes: "+(ac===0?"nenhum":nomes.join(", "))+(rec?"\nMensagem: "+rec:"");
     $("#doneMsg").textContent=last;
-    enviar({tipo:"presenca",nome:nome,telefone:tel,acompanhantes:ac,recado:rec});
+    enviar({tipo:"presenca",nome:nome,telefone:tel,acompanhantes:ac,nomesAcompanhantes:nomes.join(", "),recado:rec});
     var wa=$("#waBtn"),num=(ok(c.whatsapp)||"").replace(/\D/g,"");
     if(num){wa.href="https://wa.me/"+num+"?text="+encodeURIComponent(last);wa.hidden=false;$("#doneHint").textContent="Toque em Enviar pelo WhatsApp para entregar a confirmação aos noivos."}
     else{wa.hidden=true;$("#doneHint").textContent="Copie a mensagem e envie aos noivos pelo canal combinado."}
