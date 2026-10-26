@@ -274,6 +274,9 @@ footer small{display:block;margin-top:10px;opacity:.75}
       <small>Abra o app do seu banco, escolha Pix e leia o QR Code, ou copie o código abaixo.</small>
       <textarea id="mCode" readonly aria-label="Pix copia e cola" style="height:84px;font:12px/1.4 monospace"></textarea>
       <button class="btn" type="button" id="mCopy">Copiar código Pix</button>
+      <small>Se o seu banco não aceitar o código, use a chave Pix (chave aleatória):</small>
+      <textarea id="mKey" readonly aria-label="Chave Pix" style="height:52px;font:13px/1.4 monospace"></textarea>
+      <button class="btn ghost" type="button" id="mCopyKey">Copiar só a chave Pix</button>
       <span id="mMsg" role="status" aria-live="polite" style="min-height:1.4em;font-size:14px;color:var(--muted)"></span>
       <small>Pix para <strong id="mTit"></strong>.</small>
     </div>
@@ -354,7 +357,7 @@ var CONFIG = {
   function ascii(s,max){return s.normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^A-Za-z0-9 ]/g,"").toUpperCase().slice(0,max)}
   function crc16(s){var crc=0xFFFF;for(var i=0;i<s.length;i++){crc^=s.charCodeAt(i)<<8;for(var j=0;j<8;j++){crc=(crc&0x8000)?((crc<<1)^0x1021):(crc<<1);crc&=0xFFFF}}var h=crc.toString(16).toUpperCase();return ("0000"+h).slice(-4)}
   function pixCode(valor){
-    var p="000201010212"+tlv("26",tlv("00","br.gov.bcb.pix")+tlv("01",c.pixChave))+"52040000"+"5303986"+tlv("54",Number(valor).toFixed(2))+"5802BR"+tlv("59",ascii(c.pixTitular,25)||"NOIVOS")+tlv("60",ascii(c.pixCidade,15)||"ARACAJU")+tlv("62",tlv("05","***"))+"6304";
+    var p="000201010211"+tlv("26",tlv("00","br.gov.bcb.pix")+tlv("01",c.pixChave))+"52040000"+"5303986"+tlv("54",Number(valor).toFixed(2))+"5802BR"+tlv("59",ascii(c.pixTitular,25)||"NOIVOS")+tlv("60",ascii(c.pixCidade,15)||"ARACAJU")+tlv("62",tlv("05","***"))+"6304";
     return p+crc16(p);
   }
 
@@ -370,7 +373,7 @@ var CONFIG = {
   }
   function openPix(nome,valor){
     code=pixCode(valor);
-    $("#mCode").value=code; $("#mTit").textContent=c.pixTitular;
+    $("#mCode").value=code; $("#mKey").value=c.pixChave; $("#mTit").textContent=c.pixTitular;
     try{var q=qrcode(0,"M");q.addData(code);q.make();$("#mQr").src=q.createDataURL(5,2);$("#mQr").hidden=false}catch(_){$("#mQr").hidden=true}
     openModal("Pix",nome,valor); $("#mCopy").focus();
   }
@@ -398,6 +401,7 @@ var CONFIG = {
     function fb(){try{input.focus();input.select();document.execCommand("copy");done(true)}catch(_){done(false)}}
     try{navigator.clipboard.writeText(text).then(function(){done(true)},fb)}catch(_){fb()}
   }
+  $("#mCopyKey").addEventListener("click",function(){copy(c.pixChave,$("#mKey"),function(r){$("#mMsg").textContent=r?"Chave Pix copiada. No app do banco, escolha Pix > Chave e cole.":"Selecione a chave acima e copie."})});
   $("#mCopy").addEventListener("click",function(){copy(code,$("#mCode"),function(r){$("#mMsg").textContent=r?"Código Pix copiado. Cole no app do seu banco.":"Selecione o código acima e copie."})});
 
   /* ---- Cartão ---- */
